@@ -1,5 +1,13 @@
 # Kwenta API
 
+`node index.js`
+
+host:4200/v0/circulatingSupply
+host:4200/v0/totalSupply
+host:4200/v0/stakedSupply
+
+### scratch space
+
 kwenta token:    [0x920Cf626a271321C151D027030D5d08aF699456b](https://optimistic.etherscan.io/address/0x920Cf626a271321C151D027030D5d08aF699456b)
 supply schedule: [0x3e8b82326Ff5f2f10da8CEa117bD44343ccb9c26](https://optimistic.etherscan.io/address/0x3e8b82326ff5f2f10da8cea117bd44343ccb9c26)     
 staking rewards: [0x6e56A5D49F775BA08041e28030bc7826b13489e0](https://optimistic.etherscan.io/address/0x6e56a5d49f775ba08041e28030bc7826b13489e0)
