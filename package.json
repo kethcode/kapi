@@ -1,0 +1,26 @@
+{
+  "name": "kapi",
+  "version": "1.0.0",
+  "description": "Kwenta API",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kethcode/kapi.git"
+  },
+  "author": "kethic",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/kethcode/kapi/issues"
+  },
+  "homepage": "https://github.com/kethcode/kapi#readme",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.0.3",
+    "ethers": "^5.7.2",
+    "express": "^4.18.2",
+    "node-cron": "^3.0.2"
+  }
+}
