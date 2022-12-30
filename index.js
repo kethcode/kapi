@@ -75,7 +75,7 @@ let rewardEscrowedBalanceTimestamp = 0;
 let tradingRewardsBalance = 0;
 let tradingRewardsBalanceTimestamp = 0;
 
-let CACHE_REFRESH_DELAY = 60;
+let CACHE_REFRESH_DELAY = 3600;
 
 // Functions
 const okToRefresh = (_timestamp) => {
