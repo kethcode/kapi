@@ -88,7 +88,7 @@ const express = require("express");
 // const bodyParser = require("body-parser");
 // const cors = require("cors");
 const app = express();
-const port = 4200;
+const port = 80;
 
 // const delay = (ms) => new Promise((res) => setTimeout(res, ms));
 
