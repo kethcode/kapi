@@ -6,7 +6,6 @@ const ethers = require("ethers");
 const provider = new ethers.providers.WebSocketProvider(
   process.env.RPC_KEY_WSS
 );
-const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
 
 const kwentaTokenContractAddress = "0x920Cf626a271321C151D027030D5d08aF699456b";
 const stakingRewardsContractAddress =
@@ -43,6 +42,36 @@ const stakingRewardsContract = new ethers.Contract(
   provider
 );
 
+const express = require("express");
+const helmet = require("helmet");
+const cors = require("cors");
+
+const app = express();
+
+app.use(helmet());
+app.use(cors());
+
+// heroku adds PORT to env, and uses that
+const port = process.env.PORT || 4200;
+
+// Cache Variables
+let totalSupply = 0;
+let totalSupplyTimestamp = 0;
+
+let rewardEscrowedBalance = 0;
+let rewardEscrowedBalanceTimestamp = 0;
+
+let tradingRewardsBalance = 0;
+let tradingRewardsBalanceTimestamp = 0;
+
+let stakedSupply = 0;
+let stakedSupplyTimestamp = 0;
+
+let stakedBalance = 0;
+let stakedBalanceTimestamp = 0;
+
+// Getter Functions
+
 const getTotalSupply = async () => {
   let retval = await kwentaTokenContract.totalSupply();
   //   console.log(ethers.utils.formatEther(retval));
@@ -51,6 +80,14 @@ const getTotalSupply = async () => {
 
 const getStakedSupply = async () => {
   let retval = await stakingRewardsContract.totalSupply();
+  //   console.log(ethers.utils.formatEther(retval));
+  return retval;
+};
+
+const getStakedBalance = async () => {
+  let retval = await kwentaTokenContract.balanceOf(
+    stakingRewardsContractAddress
+  );
   //   console.log(ethers.utils.formatEther(retval));
   return retval;
 };
@@ -69,91 +106,77 @@ const getTradingRewardsBalance = async () => {
   return retval;
 };
 
-// const fs = require("fs");
-// const path = require("path");
-// const stream = require("stream");
+// API Endpoints
 
-// const provider_env = process.env.ALCHEMY_KEY_RINKEBY;
-// const wallet_env = process.env.PRIVATE_KEY_RINKEBY;
-// const provider = new ethers.providers.JsonRpcProvider(provider_env);
-// const wallet = new ethers.Wallet(wallet_env, provider);
+let api_table = `<p>Kwenta API v0:<br />
+<a href='https://kwenta-api.herokuapp.com/v0/supply-total'>https://kwenta-api.herokuapp.com/v0/supply-total</a><br />
+<a href='https://kwenta-api.herokuapp.com/v0/supply-circulating'>https://kwenta-api.herokuapp.com/v0/supply-circulating</a><br />
+<a href='https://kwenta-api.herokuapp.com/v0/supply-locked'>https://kwenta-api.herokuapp.com/v0/supply-locked</a><br />
+<a href='https://kwenta-api.herokuapp.com/v0/supply-staked'>https://kwenta-api.herokuapp.com/v0/supply-staked</a><br />
+<a href='https://kwenta-api.herokuapp.com/v0/supply-staked-circulating'>https://kwenta-api.herokuapp.com/v0/supply-staked-circulating</a><br />
+<a href='https://kwenta-api.herokuapp.com/v0/supply-staked-locked'>https://kwenta-api.herokuapp.com/v0/supply-staked-locked</a></p>`;
 
-// const path_abi_Composable = "./abi/Composable.json";
-// const path_abi_NFT_721E = "./abi/NFT_721E.json";
-// const path_data = path.resolve(__dirname, `./data/`);
+app.get("/", async (req, res) => {
+  console.log(`getting /`);
 
-// const { createCanvas, loadImage } = require("canvas");
+  res.status(200).send(api_table);
+});
 
-// const express = require("express");
-// // const bodyParser = require("body-parser");
-// // const cors = require("cors");
-const app = require("express")();
-const port = process.env.PORT || 4200;
-
-// const delay = (ms) => new Promise((res) => setTimeout(res, ms));
-
-// console.log(`Optimism Composable NFT Image Server`);
-
-// const cluster = require("cluster");
-// const os = require("os");
-// const { workerData } = require("worker_threads");
-
-let totalSupply = 0;
-let stakedSupply = 0;
-let circulatingSupply = 0;
-
-let rewardEscrowedBalance = 0;
-let tradingRewardsBalance = 0;
-
-// if (cluster.isPrimary) {
-//   totalSupply = getTotalSupply();
-//   const availableCpus = os.cpus();
-//   console.log(`Clustering to ${availableCpus.length} processes`);
-//   availableCpus.forEach(() => cluster.fork());
-
-//   //   worker.on('totalSupply')
-// } else {
-//   const { pid } = process;
-
-/// ------------------------------------------------------------------------
-/// App Starts Here
-/// ------------------------------------------------------------------------
-
-app.get("/v0/totalSupply", async (req, res) => {
-  //console.log(`${pid} getting /v0/totalSupply`);
-  console.log(`getting /v0/totalSupply`);
+app.get("/v0/supply-total", async (req, res) => {
+  console.log(`getting /v0/supply-total`);
 
   totalSupply = await getTotalSupply();
 
-  //   console.log(ethers.utils.formatEther(totalSupply));
   res.status(200).send(ethers.utils.formatEther(totalSupply));
 });
 
-app.get("/v0/stakedSupply", async (req, res) => {
-  //console.log(`${pid} getting /v0/stakedSupply`);
-  console.log(`getting /v0/stakedSupply`);
-
-  stakedSupply = await getStakedSupply();
-
-  //   console.log(ethers.utils.formatEther(stakedSupply));
-  res.status(200).send(ethers.utils.formatEther(stakedSupply));
-});
-
-app.get("/v0/circulatingSupply", async (req, res) => {
-  //console.log(`${pid} getting /v0/circulatingSupply`);
-  console.log(`getting /v0/circulatingSupply`);
+app.get("/v0/supply-circulating", async (req, res) => {
+  console.log(`getting /v0/supply-circulating`);
 
   totalSupply = await getTotalSupply();
   rewardEscrowedBalance = await getRewardEscrowBalance();
   tradingRewardsBalance = await getTradingRewardsBalance();
-  circulatingSupply = totalSupply.sub(
-    rewardEscrowedBalance.sub(tradingRewardsBalance)
-  );
 
-  //   console.log(ethers.utils.formatEther(circulatingSupply));
+  let circulatingSupply = totalSupply.sub(
+    rewardEscrowedBalance.add(tradingRewardsBalance)
+  );
   res.status(200).send(ethers.utils.formatEther(circulatingSupply));
 });
 
-//app.listen(port, () => console.log(`KAPI Worker started at pid ${pid}`));
-app.listen(port, () => console.log(`KAPI started`));
-// }
+app.get("/v0/supply-locked", async (req, res) => {
+  console.log(`getting /v0/supply-locked`);
+
+  rewardEscrowedBalance = await getRewardEscrowBalance();
+  tradingRewardsBalance = await getTradingRewardsBalance();
+
+  let escrowedBalance = rewardEscrowedBalance.add(tradingRewardsBalance);
+  res.status(200).send(ethers.utils.formatEther(escrowedBalance));
+});
+
+app.get("/v0/supply-staked", async (req, res) => {
+  console.log(`getting /v0/supply-staked`);
+
+  stakedSupply = await getStakedSupply();
+
+  res.status(200).send(ethers.utils.formatEther(stakedSupply));
+});
+
+app.get("/v0/supply-staked-circulating", async (req, res) => {
+  console.log(`getting /v0/supply-staked-circulating`);
+
+  stakedBalance = await getStakedBalance();
+
+  res.status(200).send(ethers.utils.formatEther(stakedBalance));
+});
+
+app.get("/v0/supply-staked-locked", async (req, res) => {
+  console.log(`getting /v0/supply-staked-locked`);
+
+  stakedSupply = await getStakedSupply();
+  stakedBalance = await getStakedBalance();
+
+  let stakedLocked = stakedSupply.sub(stakedBalance);
+  res.status(200).send(ethers.utils.formatEther(stakedLocked));
+});
+
+app.listen(port, () => console.log(`Kwenta API started`));
