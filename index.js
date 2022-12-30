@@ -118,6 +118,8 @@ let CACHE_REFRESH_DELAY = 3600;
  * @param index which variables timestamp are we checking
  */
 const okToRefresh = (index) => {
+  //console.log("refreshing index %d", index);
+
   // what time is it now
   let now = Math.floor(Date.now() / 1000);
 
@@ -297,6 +299,26 @@ app.get("/v0/supply-staked-locked", async (req, res) => {
 
   let stakedLocked = stakedSupply.sub(stakedBalance);
   res.status(200).send(ethers.utils.formatEther(stakedLocked));
+});
+
+/**
+ * @notice forces a hard refresh on all cached data.  RPC expensive
+ *
+ * @dev this is not documented because it's expensive and I dont
+ * 		want people using it often.  this is a developer resource
+ * 		only.  if it gets abused, I will remove it, or lock it
+ * 		behind authentication.
+ */
+app.get("/v0/supply-refresh-cache", async (req, res) => {
+  timestamps = [0, 0, 0, 0, 0];
+
+  await updateTotalSupply();
+  await updateStakedSupply();
+  await updateStakedBalance();
+  await updateRewardEscrowBalance();
+  await updateTradingRewardsBalance();
+
+  res.status(200).send(`Supply Cache Data Refreshed`);
 });
 
 /// ----------------------------------------------------------------------------
