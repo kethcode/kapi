@@ -1,3 +1,8 @@
+/* Kwenta API
+ * author: Kethic, @kethcode
+ * version: v0
+ */
+
 require("dotenv").config();
 const fs = require("fs");
 const path = require("path");
@@ -58,52 +63,64 @@ const port = process.env.PORT || 4200;
 let totalSupply = 0;
 let totalSupplyTimestamp = 0;
 
-let rewardEscrowedBalance = 0;
-let rewardEscrowedBalanceTimestamp = 0;
-
-let tradingRewardsBalance = 0;
-let tradingRewardsBalanceTimestamp = 0;
-
 let stakedSupply = 0;
 let stakedSupplyTimestamp = 0;
 
 let stakedBalance = 0;
 let stakedBalanceTimestamp = 0;
 
-// Getter Functions
+let rewardEscrowedBalance = 0;
+let rewardEscrowedBalanceTimestamp = 0;
 
-const getTotalSupply = async () => {
-  let retval = await kwentaTokenContract.totalSupply();
-  //   console.log(ethers.utils.formatEther(retval));
-  return retval;
+let tradingRewardsBalance = 0;
+let tradingRewardsBalanceTimestamp = 0;
+
+let CACHE_REFRESH_DELAY = 60;
+
+// Functions
+const okToRefresh = (_timestamp) => {
+  return Math.floor(Date.now() / 1000) >= _timestamp + CACHE_REFRESH_DELAY;
 };
 
-const getStakedSupply = async () => {
-  let retval = await stakingRewardsContract.totalSupply();
-  //   console.log(ethers.utils.formatEther(retval));
-  return retval;
+const updateTotalSupply = async () => {
+  if (okToRefresh(totalSupplyTimestamp)) {
+    totalSupply = await kwentaTokenContract.totalSupply();
+    totalSupplyTimestamp = Math.floor(Date.now() / 1000);
+  }
 };
 
-const getStakedBalance = async () => {
-  let retval = await kwentaTokenContract.balanceOf(
-    stakingRewardsContractAddress
-  );
-  //   console.log(ethers.utils.formatEther(retval));
-  return retval;
+const updateStakedSupply = async () => {
+  if (okToRefresh(stakedSupplyTimestamp)) {
+    stakedSupply = await stakingRewardsContract.totalSupply();
+    stakedSupplyTimestamp = Math.floor(Date.now() / 1000);
+  }
 };
 
-const getRewardEscrowBalance = async () => {
-  let retval = await kwentaTokenContract.balanceOf(rewardEscrowContractAddress);
-  //   console.log(ethers.utils.formatEther(retval));
-  return retval;
+const updateStakedBalance = async () => {
+  if (okToRefresh(stakedBalanceTimestamp)) {
+    stakedBalance = await kwentaTokenContract.balanceOf(
+      stakingRewardsContractAddress
+    );
+    stakedBalanceTimestamp = Math.floor(Date.now() / 1000);
+  }
 };
 
-const getTradingRewardsBalance = async () => {
-  let retval = await kwentaTokenContract.balanceOf(
-    tradingRewardsContractAddress
-  );
-  //   console.log(ethers.utils.formatEther(retval));
-  return retval;
+const updateRewardEscrowBalance = async () => {
+  if (okToRefresh(rewardEscrowedBalanceTimestamp)) {
+    rewardEscrowedBalance = await kwentaTokenContract.balanceOf(
+      rewardEscrowContractAddress
+    );
+    rewardEscrowedBalanceTimestamp = Math.floor(Date.now() / 1000);
+  }
+};
+
+const updateTradingRewardsBalance = async () => {
+  if (okToRefresh(tradingRewardsBalanceTimestamp)) {
+    tradingRewardsBalance = await kwentaTokenContract.balanceOf(
+      tradingRewardsContractAddress
+    );
+    tradingRewardsBalanceTimestamp = Math.floor(Date.now() / 1000);
+  }
 };
 
 // API Endpoints
@@ -117,25 +134,25 @@ let api_table = `<p>Kwenta API v0:<br />
 <a href='https://kwenta-api.herokuapp.com/v0/supply-staked-locked'>https://kwenta-api.herokuapp.com/v0/supply-staked-locked</a></p>`;
 
 app.get("/", async (req, res) => {
-  console.log(`getting /`);
+  //console.log(`getting /`);
 
   res.status(200).send(api_table);
 });
 
 app.get("/v0/supply-total", async (req, res) => {
-  console.log(`getting /v0/supply-total`);
+  //console.log(`getting /v0/supply-total`);
 
-  totalSupply = await getTotalSupply();
+  await updateTotalSupply();
 
   res.status(200).send(ethers.utils.formatEther(totalSupply));
 });
 
 app.get("/v0/supply-circulating", async (req, res) => {
-  console.log(`getting /v0/supply-circulating`);
+  //console.log(`getting /v0/supply-circulating`);
 
-  totalSupply = await getTotalSupply();
-  rewardEscrowedBalance = await getRewardEscrowBalance();
-  tradingRewardsBalance = await getTradingRewardsBalance();
+  await updateTotalSupply();
+  await updateRewardEscrowBalance();
+  await updateTradingRewardsBalance();
 
   let circulatingSupply = totalSupply.sub(
     rewardEscrowedBalance.add(tradingRewardsBalance)
@@ -144,36 +161,36 @@ app.get("/v0/supply-circulating", async (req, res) => {
 });
 
 app.get("/v0/supply-locked", async (req, res) => {
-  console.log(`getting /v0/supply-locked`);
+  //console.log(`getting /v0/supply-locked`);
 
-  rewardEscrowedBalance = await getRewardEscrowBalance();
-  tradingRewardsBalance = await getTradingRewardsBalance();
+  await updateRewardEscrowBalance();
+  await updateTradingRewardsBalance();
 
   let escrowedBalance = rewardEscrowedBalance.add(tradingRewardsBalance);
   res.status(200).send(ethers.utils.formatEther(escrowedBalance));
 });
 
 app.get("/v0/supply-staked", async (req, res) => {
-  console.log(`getting /v0/supply-staked`);
+  //console.log(`getting /v0/supply-staked`);
 
-  stakedSupply = await getStakedSupply();
+  await updateStakedSupply();
 
   res.status(200).send(ethers.utils.formatEther(stakedSupply));
 });
 
 app.get("/v0/supply-staked-circulating", async (req, res) => {
-  console.log(`getting /v0/supply-staked-circulating`);
+  //console.log(`getting /v0/supply-staked-circulating`);
 
-  stakedBalance = await getStakedBalance();
+  await updateStakedBalance();
 
   res.status(200).send(ethers.utils.formatEther(stakedBalance));
 });
 
 app.get("/v0/supply-staked-locked", async (req, res) => {
-  console.log(`getting /v0/supply-staked-locked`);
+  //console.log(`getting /v0/supply-staked-locked`);
 
-  stakedSupply = await getStakedSupply();
-  stakedBalance = await getStakedBalance();
+  await updateStakedSupply();
+  await updateStakedBalance();
 
   let stakedLocked = stakedSupply.sub(stakedBalance);
   res.status(200).send(ethers.utils.formatEther(stakedLocked));
