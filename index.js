@@ -84,11 +84,11 @@ const getTradingRewardsBalance = async () => {
 
 // const { createCanvas, loadImage } = require("canvas");
 
-const express = require("express");
-// const bodyParser = require("body-parser");
-// const cors = require("cors");
-const app = express();
-const port = 4200;
+// const express = require("express");
+// // const bodyParser = require("body-parser");
+// // const cors = require("cors");
+const app = require("express")();
+const port = process.env.PORT || 4200;
 
 // const delay = (ms) => new Promise((res) => setTimeout(res, ms));
 
