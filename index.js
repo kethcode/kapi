@@ -1,7 +1,7 @@
 /**
  * @title Kwenta API
  * @author Kethic (@kethcode, kethic@kethic.com)
- * @version v0.5
+ * @version v0.5.1
  * @notice  The Kwenta API is a REST interface for standard web apps to
  * 			retrieve data about Kwenta products and tokens.  The current
  * 			version focuses on $Kwenta token data.
@@ -289,7 +289,7 @@ let api_table = `<p>Kwenta API v0:<br />
 <a href='https://kwenta-api.herokuapp.com/v0/supply-staked'>https://kwenta-api.herokuapp.com/v0/supply-staked</a><br />
 <a href='https://kwenta-api.herokuapp.com/v0/supply-staked-circulating'>https://kwenta-api.herokuapp.com/v0/supply-staked-circulating</a><br />
 <a href='https://kwenta-api.herokuapp.com/v0/supply-staked-locked'>https://kwenta-api.herokuapp.com/v0/supply-staked-locked</a><br />
-<a href='https://kwenta-api.herokuapp.com/v0/supply-refresh-cache'>https://kwenta-api.herokuapp.com/v0/supply-refresh-cache</a>(DEV ONLY, EXPENSIVE)</p>`;
+<a href='https://kwenta-api.herokuapp.com/v0/supply-refresh-cache'>https://kwenta-api.herokuapp.com/v0/supply-refresh-cache</a> (DEV ONLY, EXPENSIVE)</p>`;
 
 /// ----------------------------------------------------------------------------
 /// Routes
