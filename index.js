@@ -1,7 +1,7 @@
 /**
  * @title Kwenta API
  * @author Kethic (@kethcode, kethic@kethic.com)
- * @version v0.3
+ * @version v0.5
  * @notice  The Kwenta API is a REST interface for standard web apps to
  * 			retrieve data about Kwenta products and tokens.  The current
  * 			version focuses on $Kwenta token data.
@@ -28,14 +28,14 @@ const provider = new ethers.providers.WebSocketProvider(
   process.env.RPC_KEY_WSS
 );
 
-const kwentaTokenContractAddress = 
-  "0x920Cf626a271321C151D027030D5d08aF699456b";
+const kwentaTokenContractAddress = "0x920Cf626a271321C151D027030D5d08aF699456b";
 const stakingRewardsContractAddress =
   "0x6e56A5D49F775BA08041e28030bc7826b13489e0";
 const rewardEscrowContractAddress =
   "0x1066A8eB3d90Af0Ad3F89839b974658577e75BE2";
 const tradingRewardsContractAddress =
   "0xf486A72E8c8143ACd9F65A104A16990fDb38be14";
+const treasuryContractAddress = "0x82d2242257115351899894eF384f779b5ba8c695";
 
 const kwentaTokenAbiPath = path.resolve(__dirname, "./abi/kwentaToken.json");
 
@@ -95,8 +95,9 @@ let stakedSupply = 0;
 let stakedBalance = 0;
 let rewardEscrowedBalance = 0;
 let tradingRewardsBalance = 0;
+let treasuryBalance = 0;
 
-let timestamps = [0, 0, 0, 0, 0];
+let timestamps = [0, 0, 0, 0, 0, 0];
 
 const timestamp_index = {
   totalSupply: 0,
@@ -104,9 +105,13 @@ const timestamp_index = {
   stakedBalance: 2,
   rewardEscrowedBalance: 3,
   tradingRewardsBalance: 4,
+  treasuryBalance: 5,
 };
 
 let CACHE_REFRESH_DELAY = 3600;
+let CC_ALLOCATION = ethers.BigNumber.from(47000).mul(
+  ethers.BigNumber.from(10).pow(18)
+);
 
 /// ----------------------------------------------------------------------------
 /// Functions
@@ -139,8 +144,15 @@ const okToRefresh = (index) => {
  */
 const updateTotalSupply = async () => {
   if (okToRefresh(timestamp_index.totalSupply)) {
-    totalSupply = await kwentaTokenContract.totalSupply();
+    try {
+      totalSupply = await kwentaTokenContract.totalSupply();
+    } catch (e) {
+      console.log("kwentaTokenContract.totalSupply() failed. Retrying.");
+      console.err("kwentaTokenContract.totalSupply() failed: ", e);
+      totalSupply = await kwentaTokenContract.totalSupply();
+    }
   }
+  //   console.log("totalSupply: ", ethers.utils.formatEther(totalSupply));
 };
 
 /**
@@ -148,8 +160,15 @@ const updateTotalSupply = async () => {
  */
 const updateStakedSupply = async () => {
   if (okToRefresh(timestamp_index.stakedSupply)) {
-    stakedSupply = await stakingRewardsContract.totalSupply();
+    try {
+      stakedSupply = await stakingRewardsContract.totalSupply();
+    } catch (e) {
+      console.log("stakingRewardsContract.totalSupply() failed. Retrying.");
+      console.err("stakingRewardsContract.totalSupply() failed: ", e);
+      stakedSupply = await stakingRewardsContract.totalSupply();
+    }
   }
+  //   console.log("stakedSupply: ", ethers.utils.formatEther(stakedSupply));
 };
 
 /**
@@ -157,10 +176,24 @@ const updateStakedSupply = async () => {
  */
 const updateStakedBalance = async () => {
   if (okToRefresh(timestamp_index.stakedBalance)) {
-    stakedBalance = await kwentaTokenContract.balanceOf(
-      stakingRewardsContractAddress
-    );
+    try {
+      stakedBalance = await kwentaTokenContract.balanceOf(
+        stakingRewardsContractAddress
+      );
+    } catch (e) {
+      console.log(
+        "kwentaTokenContract.balanceOf(stakingRewardsContractAddress) failed. Retrying."
+      );
+      console.err(
+        "kwentaTokenContract.balanceOf(stakingRewardsContractAddress) failed: ",
+        e
+      );
+      stakedBalance = await kwentaTokenContract.balanceOf(
+        stakingRewardsContractAddress
+      );
+    }
   }
+  //   console.log("stakedBalance: ", ethers.utils.formatEther(stakedBalance));
 };
 
 /**
@@ -168,10 +201,27 @@ const updateStakedBalance = async () => {
  */
 const updateRewardEscrowBalance = async () => {
   if (okToRefresh(timestamp_index.rewardEscrowedBalance)) {
-    rewardEscrowedBalance = await kwentaTokenContract.balanceOf(
-      rewardEscrowContractAddress
-    );
+    try {
+      rewardEscrowedBalance = await kwentaTokenContract.balanceOf(
+        rewardEscrowContractAddress
+      );
+    } catch (e) {
+      console.log(
+        "kwentaTokenContract.balanceOf(rewardEscrowContractAddress) failed. Retrying."
+      );
+      console.err(
+        "kwentaTokenContract.balanceOf(rewardEscrowContractAddress) failed: ",
+        e
+      );
+      rewardEscrowedBalance = await kwentaTokenContract.balanceOf(
+        rewardEscrowContractAddress
+      );
+    }
   }
+  //   console.log(
+  //     "rewardEscrowedBalance: ",
+  //     ethers.utils.formatEther(rewardEscrowedBalance)
+  //   );
 };
 
 /**
@@ -179,10 +229,52 @@ const updateRewardEscrowBalance = async () => {
  */
 const updateTradingRewardsBalance = async () => {
   if (okToRefresh(timestamp_index.tradingRewardsBalance)) {
-    tradingRewardsBalance = await kwentaTokenContract.balanceOf(
-      tradingRewardsContractAddress
-    );
+    try {
+      tradingRewardsBalance = await kwentaTokenContract.balanceOf(
+        tradingRewardsContractAddress
+      );
+    } catch (e) {
+      console.log(
+        "kwentaTokenContract.balanceOf(tradingRewardsContractAddress) failed. Retrying."
+      );
+      console.err(
+        "kwentaTokenContract.balanceOf(tradingRewardsContractAddress) failed: ",
+        e
+      );
+      tradingRewardsBalance = await kwentaTokenContract.balanceOf(
+        tradingRewardsContractAddress
+      );
+    }
   }
+  //   console.log(
+  //     "tradingRewardsBalance: ",
+  //     ethers.utils.formatEther(tradingRewardsBalance)
+  //   );
+};
+
+/**
+ * @notice updates treasuryBalance cache variable if it has expired
+ */
+const updateTreasuryBalance = async () => {
+  if (okToRefresh(timestamp_index.treasuryBalance)) {
+    try {
+      treasuryBalance = await kwentaTokenContract.balanceOf(
+        treasuryContractAddress
+      );
+    } catch (e) {
+      console.log(
+        "kwentaTokenContract.balanceOf(treasuryContractAddress) failed. Retrying."
+      );
+      console.err(
+        "kwentaTokenContract.balanceOf(treasuryContractAddress) failed: ",
+        e
+      );
+      treasuryBalance = await kwentaTokenContract.balanceOf(
+        treasuryContractAddress
+      );
+    }
+  }
+  //   console.log("treasuryBalance: ", ethers.utils.formatEther(treasuryBalance));
 };
 
 /// ----------------------------------------------------------------------------
@@ -192,10 +284,12 @@ const updateTradingRewardsBalance = async () => {
 let api_table = `<p>Kwenta API v0:<br />
 <a href='https://kwenta-api.herokuapp.com/v0/supply-total'>https://kwenta-api.herokuapp.com/v0/supply-total</a><br />
 <a href='https://kwenta-api.herokuapp.com/v0/supply-circulating'>https://kwenta-api.herokuapp.com/v0/supply-circulating</a><br />
+<a href='https://kwenta-api.herokuapp.com/v0/supply-liquid'>https://kwenta-api.herokuapp.com/v0/supply-liquid</a><br />
 <a href='https://kwenta-api.herokuapp.com/v0/supply-locked'>https://kwenta-api.herokuapp.com/v0/supply-locked</a><br />
 <a href='https://kwenta-api.herokuapp.com/v0/supply-staked'>https://kwenta-api.herokuapp.com/v0/supply-staked</a><br />
 <a href='https://kwenta-api.herokuapp.com/v0/supply-staked-circulating'>https://kwenta-api.herokuapp.com/v0/supply-staked-circulating</a><br />
-<a href='https://kwenta-api.herokuapp.com/v0/supply-staked-locked'>https://kwenta-api.herokuapp.com/v0/supply-staked-locked</a></p>`;
+<a href='https://kwenta-api.herokuapp.com/v0/supply-staked-locked'>https://kwenta-api.herokuapp.com/v0/supply-staked-locked</a><br />
+<a href='https://kwenta-api.herokuapp.com/v0/supply-refresh-cache'>https://kwenta-api.herokuapp.com/v0/supply-refresh-cache</a>(DEV ONLY, EXPENSIVE)</p>`;
 
 /// ----------------------------------------------------------------------------
 /// Routes
@@ -220,6 +314,32 @@ app.get("/v0/supply-total", async (req, res) => {
 });
 
 /**
+ * @notice calculate and return $Kwenta circulating token count
+ *
+ * @dev	escrowed tokens are considered locked.  trading reward contract
+ * 		holds escrowed tokens that have yet to be claimed, but they are
+ * 		still locked tokens. treasury is not considered public, and
+ * 		therefore is not circulating. CC allocation is considered
+ * 		founding team vesting, and is therefore also not circulating.
+ *
+ * @dev calculation: totalSupply - (escrow claimed + escrow unclaimed +
+ * 		treasury + CC_ALLOCATIAON)
+ */
+app.get("/v0/supply-circulating", async (req, res) => {
+  await updateTotalSupply();
+  await updateRewardEscrowBalance();
+  await updateTradingRewardsBalance();
+  await updateTreasuryBalance();
+
+  let circulatingSupply = totalSupply.sub(
+    rewardEscrowedBalance.add(
+      tradingRewardsBalance.add(treasuryBalance.add(CC_ALLOCATION))
+    )
+  );
+  res.status(200).send(ethers.utils.formatEther(circulatingSupply));
+});
+
+/**
  * @notice calculate and return $Kwenta liquid token count
  *
  * @dev	escrowed tokens are considered locked.  trading reward contract
@@ -228,15 +348,15 @@ app.get("/v0/supply-total", async (req, res) => {
  *
  * @dev calculation: totalSupply - (escrow claimed + escrow unclaimed)
  */
-app.get("/v0/supply-circulating", async (req, res) => {
+app.get("/v0/supply-liquid", async (req, res) => {
   await updateTotalSupply();
   await updateRewardEscrowBalance();
   await updateTradingRewardsBalance();
 
-  let circulatingSupply = totalSupply.sub(
+  let liquidSupply = totalSupply.sub(
     rewardEscrowedBalance.add(tradingRewardsBalance)
   );
-  res.status(200).send(ethers.utils.formatEther(circulatingSupply));
+  res.status(200).send(ethers.utils.formatEther(liquidSupply));
 });
 
 /**
@@ -310,13 +430,14 @@ app.get("/v0/supply-staked-locked", async (req, res) => {
  * 		behind authentication.
  */
 app.get("/v0/supply-refresh-cache", async (req, res) => {
-  timestamps = [0, 0, 0, 0, 0];
+  timestamps = [0, 0, 0, 0, 0, 0];
 
   await updateTotalSupply();
   await updateStakedSupply();
   await updateStakedBalance();
   await updateRewardEscrowBalance();
   await updateTradingRewardsBalance();
+  await updateTreasuryBalance();
 
   res.status(200).send(`Supply Cache Data Refreshed`);
 });
